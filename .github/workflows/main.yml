@@ -1,29 +1,27 @@
-name: Roblox_VM_Final_Fuerza
+name: Roblox_VM_Final_Final
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Configurar_Acceso_Total
+      - name: Forzar_Apertura
         run: |
-          # 1. Instalar Ngrok con tu Token
-          choco install ngrok -y
-          ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
+          # 1. Matar cualquier proceso viejo
+          taskkill /f /im AnyDesk.exe /t || info
           
-          # 2. Descargar AnyDesk y desactivar Firewall
+          # 2. Abrir el Firewall por completo
           netsh advfirewall set allprofiles state off
-          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           
-          # 3. Iniciar AnyDesk con contraseña forzada
+          # 3. Descargar y ejecutar sin instalar (Modo Portátil)
+          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--set-password RobloxVM2026"
           
       - name: Obtener_ID
         run: |
-          Start-Sleep -Seconds 15
-          ./AnyDesk.exe --get-id
+          Start-Sleep -Seconds 20
+          $id = ./AnyDesk.exe --get-id
+          echo "TU_ID_ES: $id"
           
       - name: Mantener_Viva
-        run: |
-          Write-Host "Si no conecta al primer intento, cierra AnyDesk en el móvil y reintenta."
-          Start-Sleep -Seconds 21600
-          
+        run: Start-Sleep -Seconds 21600
+        
