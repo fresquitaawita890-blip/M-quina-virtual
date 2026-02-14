@@ -1,39 +1,37 @@
-name: PC_GAMER_REAL_FINAL
+name: PC_GAMER_ESTRUCTURA_REAL
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_PC_Profesional
+      - name: 1_Crear_Usuario_y_Acceso
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
           
-      - name: 2_Preparar_GPU_Software
+      - name: 2_Instalar_Motor_Grafico_Mesa3D
         run: |
-          # Descargamos los graficos Mesa3D
+          # Bajamos los archivos de video (GPU Virtual)
           Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
-          # Usamos la herramienta nativa para extraer sin fallos
-          7z x mesa.7z -oC:\Mesa3D -y
-          # En lugar de System32, creamos nuestra propia carpeta de drivers segura
-          New-Item -ItemType Directory -Path "C:\Drivers_Gaming" -Force
-          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Drivers_Gaming\opengl32.dll"
-          Copy-Item "C:\Mesa3D\x64\libglapi.dll" -Destination "C:\Drivers_Gaming\libglapi.dll"
+          7z x mesa.7z -oC:\Graficos_Base -y
+          # Creamos una carpeta en C: que nadie pueda bloquear
+          New-Item -ItemType Directory -Path "C:\Juego_Setup" -Force
+          Copy-Item "C:\Graficos_Base\x64\opengl32.dll" -Destination "C:\Juego_Setup\opengl32.dll"
           
-      - name: 3_Descargar_Juego_Directo
+      - name: 3_Descargar_Roblox_Sin_Instalador
         run: |
-          # Bajamos el ejecutable que se salta el error "Forbidden"
+          # Descargamos el juego en la carpeta libre de permisos para evitar el "Access Denied"
           $url = "https://setup.rbxcdn.com/version-bd08027bb04e4045-RobloxPlayerBeta.exe"
-          Invoke-WebRequest -Uri $url -OutFile "C:\Users\Public\Desktop\Roblox_Real.exe"
+          Invoke-WebRequest -Uri $url -OutFile "C:\Juego_Setup\Roblox_Player.exe"
           
-      - name: 4_Conectar_Red_Gaming
+      - name: 4_Finalizar_Red_Tailscale
         run: |
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-gamer-real
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-real-paso-a-paso
           
-      - name: 5_No_Cerrar
+      - name: 5_Mantener_PC_Viva
         run: Start-Sleep -Seconds 21600
         
