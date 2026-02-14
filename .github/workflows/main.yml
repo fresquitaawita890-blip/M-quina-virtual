@@ -1,28 +1,29 @@
-name: PC_Roblox_Estable
+name: PC_Roblox_Funciona_Ya
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_Usuario_y_RDP
+      - name: 1_Configurar_PC
         run: |
-          # Esto funcionó bien en tus fotos anteriores
           net user runneradmin RobloxVM2026
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-      - name: 2_Instalar_Ngrok_y_Esperar
+      - name: 2_Instalar_Ngrok_Directo
         run: |
-          # Ngrok se instala bien, pero necesita tiempo
-          choco install ngrok -y
-          ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
-          Start-Process ngrok -ArgumentList "tcp 3389"
-          Write-Host "Esperando 60 segundos para evitar error de conexion..."
-          Start-Sleep -Seconds 60
+          # Descargamos ngrok directo sin usar choco (que dio error 504)
+          Invoke-WebRequest -Uri "https://bin.equinox.io/c/b342964/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+          Expand-Archive -Path "ngrok.zip" -DestinationPath "."
+          # Configurar el Token
+          .\ngrok.exe config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
+          # Lanzar y esperar
+          Start-Process .\ngrok.exe -ArgumentList "tcp 3389"
+          Write-Host "Esperando 30 segundos..."
+          Start-Sleep -Seconds 30
           
-      - name: 3_OBTENER_DATOS_FINALES
+      - name: 3_DAME_LA_DIRECCION
         run: |
-          # Este paso nos dará el link para tu celular
           $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
           $clean = $address -replace "tcp://", ""
           echo "--------------------------------------------------"
