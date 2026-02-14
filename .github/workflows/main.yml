@@ -4,23 +4,23 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Instalacion_Directa
+      - name: Instalacion_Forzada
         run: |
-          # Descarga directa de AnyDesk sin instalador (Portable)
+          # Descarga AnyDesk directo
           Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           
-          # Abrir AnyDesk y configurar contraseña
-          Start-Process -FilePath ".\AnyDesk.exe"
-          Start-Sleep -Seconds 5
-          ./AnyDesk.exe --set-password "RobloxVM2026"
+          # Lo abrimos en modo 'instalación silenciosa' para que no pida permisos
+          Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--install C:\AnyDesk --start-with-win --silent" -Wait
+          
+          # Configuramos la contraseña directamente en el ejecutable instalado
+          & "C:\AnyDesk\AnyDesk.exe" --set-password "RobloxVM2026"
           
       - name: Obtener_ID
         run: |
-          # Comando para ver el ID en pantalla
-          ./AnyDesk.exe --get-id
+          # Esperamos a que el servicio arranque bien
+          Start-Sleep -Seconds 10
+          & "C:\AnyDesk\AnyDesk.exe" --get-id
           
       - name: Mantener_Viva
-        run: |
-          Write-Host "Conecta AnyDesk con pass: RobloxVM2026"
-          Start-Sleep -Seconds 21600
-          
+        run: Start-Sleep -Seconds 21600
+        
