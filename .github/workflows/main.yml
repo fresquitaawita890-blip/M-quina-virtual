@@ -1,4 +1,4 @@
-name: PC_GAMER_FINAL_PRO
+name: PC_GAMER_FINAL_V11
 on: workflow_dispatch
 
 jobs:
@@ -7,25 +7,25 @@ jobs:
     steps:
       - name: 1_Configurar_Todo
         run: |
+          # Habilitar RDP y crear usuario
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
           
       - name: 2_Preparar_Graficos_Mesa3D
         run: |
-          # Descargamos Mesa3D (esto ya funciona perfecto según tu foto)
+          # Descargamos y extraemos los graficos (Esto ya te funciono bien)
           Invoke-WebRequest -Uri "https://www.7-zip.org/a/7zr.exe" -OutFile "7zr.exe"
           Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
           .\7zr.exe x mesa.7z -oC:\Mesa3D -y
-          # Guardamos el archivo en un lugar seguro para después
           New-Item -ItemType Directory -Path "C:\Graficos" -Force
           Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Graficos\opengl32.dll"
           
-      - name: 3_Instalar_Tailscale_y_Roblox
+      - name: 3_Descargar_Roblox_y_Tailscale
         run: |
-          # Instalador de Roblox en el escritorio
-          Invoke-WebRequest -Uri "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe" -OutFile "C:\Users\RDP\Desktop\Instalar_Roblox.exe"
-          # Conectar Red
+          # Descargamos Roblox en C:\ para evitar errores de carpeta
+          Invoke-WebRequest -Uri "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe" -OutFile "C:\Instalar_Roblox.exe"
+          # Tailscale
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-pc-gamer
