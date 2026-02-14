@@ -1,23 +1,23 @@
-name: Roblox_VM_Ultra
+name: Roblox_VM_Total_Control
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Instalacion_Forzada_Admin
+      - name: Forzar_Acceso_Administrador
         run: |
-          # 1. Bajamos AnyDesk
+          # 1. DESACTIVAR FIREWALL (Para que no bloquee AnyDesk)
+          netsh advfirewall set allprofiles state off
+          
+          # 2. Descargar AnyDesk
           Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           
-          # 2. Lo instalamos como Servicio (Esto evita que pida "Aceptar")
+          # 3. Instalación como sistema y configuración de clave
           Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--install C:\AnyDesk --start-with-win --silent" -Wait
-          
-          # 3. Configuramos la clave de administrador
           & "C:\AnyDesk\AnyDesk.exe" --set-password "RobloxVM2026"
           
-          # 4. TRUCO FINAL: Reiniciamos el servicio para que reconozca la clave
-          net stop AnyDesk
-          net start AnyDesk
+          # 4. Forzar que AnyDesk se ejecute como servicio de fondo
+          & "C:\AnyDesk\AnyDesk.exe" --service
           
       - name: Obtener_ID
         run: |
