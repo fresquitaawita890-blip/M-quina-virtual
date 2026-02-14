@@ -1,40 +1,36 @@
-name: PC_GAMER_FINAL_ROBLOX
+name: PC_Roblox_Estable
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_PC
+      - name: 1_Configurar_Usuario_y_RDP
         run: |
-          # Configuramos el usuario runneradmin con clave para que te deje entrar
+          # Esto funcionó bien en tus fotos anteriores
           net user runneradmin RobloxVM2026
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-      - name: 2_Instalar_Graficos_Mesa3D
+      - name: 2_Instalar_Ngrok_y_Esperar
         run: |
-          # Esto es lo que hace que Roblox NO se cierre. Instala el motor gráfico por software.
-          choco install mesa3d-softpipe -y
-          
-      - name: 3_Abrir_Tunel_Directo
-        run: |
-          # Usamos un servidor alternativo para que no te de el error "connection refused"
+          # Ngrok se instala bien, pero necesita tiempo
           choco install ngrok -y
           ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
           Start-Process ngrok -ArgumentList "tcp 3389"
-          Start-Sleep -Seconds 45
+          Write-Host "Esperando 60 segundos para evitar error de conexion..."
+          Start-Sleep -Seconds 60
           
-      - name: 4_OBTENER_DATOS_YA
+      - name: 3_OBTENER_DATOS_FINALES
         run: |
+          # Este paso nos dará el link para tu celular
           $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
           $clean = $address -replace "tcp://", ""
           echo "--------------------------------------------------"
-          echo "✅ PC LISTA PARA ROBLOX"
           echo "🌐 DIRECCION: $clean"
           echo "👤 USUARIO: runneradmin"
           echo "🔑 CLAVE: RobloxVM2026"
           echo "--------------------------------------------------"
           
-      - name: 5_No_Cerrar
+      - name: 4_Mantener_Encendida
         run: Start-Sleep -Seconds 21600
         
