@@ -1,42 +1,40 @@
-name: PC_GAMER_FINAL_V10
+name: PC_GAMER_FINAL_OK
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_RDP_y_Usuario
+      - name: 1_Configurar_Todo
         run: |
+          # Habilitar RDP y crear usuario RDP / RobloxVM2026
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
           
-      - name: 2_Instalar_Graficos_Mesa3D_Seguro
+      - name: 2_Instalar_Graficos_Directo
         run: |
-          # Instalamos Mesa3D usando el gestor oficial de Windows (Chocolatey) de forma directa
-          choco install mesa3d-softpipe -y
-          # Esto pone los graficos en el sistema sin necesidad de andar moviendo archivos manualmente
+          # Descargamos el archivo opengl32.dll directamente para que Roblox funcione
+          $url = "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z"
+          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7zr.exe" -OutFile "7zr.exe"
+          Invoke-WebRequest -Uri $url -OutFile "mesa.7z"
+          .\7zr.exe x mesa.7z -oC:\Mesa3D -y
+          # Lo ponemos en la carpeta del sistema para que Roblox lo detecte siempre
+          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Windows\System32\opengl32.dll" -Force
           
-      - name: 3_Preparar_Roblox
+      - name: 3_Poner_Roblox_en_Escritorio
         run: |
-          # Descargamos el instalador directo al escritorio del usuario RDP
-          $url = "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe"
           $dest = "C:\Users\RDP\Desktop\Instalar_Roblox.exe"
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          Invoke-WebRequest -Uri $url -OutFile $dest
+          Invoke-WebRequest -Uri "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe" -OutFile $dest
           
       - name: 4_Conectar_Tailscale
         run: |
-          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-pc-gamer
           $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
-          Write-Host "=============================="
-          Write-Host "TU IP ES: $tsIP"
-          Write-Host "=============================="
+          Write-Host "IP PARA RDP: $tsIP"
           
-      - name: 5_Mantener_Viva
+      - name: 5_No_Cerrar
         run: Start-Sleep -Seconds 21600
         
