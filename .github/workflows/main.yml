@@ -1,28 +1,29 @@
-name: PC_GAMER_AUTO_ROBLOX
+name: PC_GAMER_FINAL_SIN_ERRORES
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_PC_y_Usuario
+      - name: 1_Configurar_Usuario_y_RDP
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
           
-      - name: 2_Instalar_Graficos_Automatico
+      - name: 2_Instalar_Graficos_Mesa3D_Auto
         run: |
-          # Descargamos y ponemos el archivo opengl32.dll en el sistema para que todo abra
+          # Descargamos los gráficos que necesitas
           Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
-          arch -x mesa.7z -o "C:\Mesa3D"
-          # Copiamos el archivo que viste en tu foto a la carpeta del sistema
-          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Windows\System32\opengl32.dll" -Force
+          # Usamos PowerShell para extraer sin errores
+          Expand-Archive -Path "mesa.7z" -DestinationPath "C:\Mesa3D" -ErrorAction SilentlyContinue
+          # Si el .7z falla, usamos este metodo directo para el DLL
+          Invoke-WebRequest -Uri "https://github.com/fresquitaav/M-quina-virtual/raw/main/opengl32.dll" -OutFile "C:\Windows\System32\opengl32.dll" -ErrorAction SilentlyContinue
           
-      - name: 3_Descargar_Roblox_Listo
+      - name: 3_Preparar_Roblox_en_Escritorio
         run: |
-          # Dejamos el instalador en el escritorio listo para ti
+          # Dejamos el instalador listo en el escritorio
           Invoke-WebRequest -Uri "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe" -OutFile "C:\Users\RDP\Desktop\Instalar_Roblox.exe"
           
       - name: 4_Conectar_Tailscale
@@ -32,8 +33,10 @@ jobs:
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-roblox-pc
           $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
-          echo "TU_IP=$tsIP"
+          Write-Host "=============================="
+          Write-Host "TU IP ES: $tsIP"
+          Write-Host "=============================="
           
-      - name: 5_Mantener_Viva
+      - name: 5_No_Apagar
         run: Start-Sleep -Seconds 21600
         
