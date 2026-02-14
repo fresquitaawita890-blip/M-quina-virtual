@@ -6,18 +6,24 @@ jobs:
     steps:
       - name: Forzar_Apertura
         run: |
-          # 1. Abrir el Firewall por completo
           netsh advfirewall set allprofiles state off
-          
-          # 2. Descargar y ejecutar AnyDesk
           Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--set-password RobloxVM2026"
           
-      - name: Obtener_ID
+      - name: Obtener_ID_Insistente
         run: |
-          Start-Sleep -Seconds 20
+          echo "Esperando a que AnyDesk despierte..."
+          Start-Sleep -Seconds 30
+          # Intento 1
           $id = ./AnyDesk.exe --get-id
+          # Si sale vacío, esperamos y reintentamos
+          if (-not $id) { 
+             Start-Sleep -Seconds 20
+             $id = ./AnyDesk.exe --get-id 
+          }
+          echo "-----------------------"
           echo "TU_ID_ES: $id"
+          echo "-----------------------"
           
       - name: Mantener_Viva
         run: Start-Sleep -Seconds 21600
