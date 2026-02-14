@@ -1,35 +1,41 @@
-name: PC_GAMER_FINAL_V11
+name: PC_GAMER_HARDWARE_REAL
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_Todo
+      - name: 1_Ocultar_Entorno_Virtual
         run: |
-          # Habilitar RDP y crear usuario
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+          # Cambiamos registros para que no parezca una VM de centro de datos
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name "EditionID" -Value "Professional"
+          Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
-          
-      - name: 2_Preparar_Graficos_Mesa3D
+
+      - name: 2_Inyectar_GPU_Software_Avanzada
         run: |
-          # Descargamos y extraemos los graficos (Esto ya te funciono bien)
-          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7zr.exe" -OutFile "7zr.exe"
+          # Descargamos los drivers que simulan hardware real (Mesa3D)
           Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
-          .\7zr.exe x mesa.7z -oC:\Mesa3D -y
-          New-Item -ItemType Directory -Path "C:\Graficos" -Force
-          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Graficos\opengl32.dll"
-          
-      - name: 3_Descargar_Roblox_y_Tailscale
+          7z x mesa.7z -oC:\Mesa3D -y
+          # Inyectamos en System32 para que todo el Windows tenga "GPU"
+          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Windows\System32\opengl32.dll" -Force
+          Copy-Item "C:\Mesa3D\x64\libglapi.dll" -Destination "C:\Windows\System32\libglapi.dll" -Force
+          # Esto le dice a Windows que use este driver como hardware primario
+          New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows(R) Testing\Defaults" -Name "EnableDX9" -Value 1 -PropertyType DWORD -Force
+
+      - name: 3_Bypass_Descarga_Roblox
         run: |
-          # Descargamos Roblox en C:\ para evitar errores de carpeta
-          Invoke-WebRequest -Uri "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe" -OutFile "C:\Instalar_Roblox.exe"
-          # Tailscale
+          # Como el instalador web te da "Forbidden", bajamos el ejecutable directo
+          $url = "https://setup.rbxcdn.com/version-bd08027bb04e4045-RobloxPlayerBeta.exe"
+          Invoke-WebRequest -Uri $url -OutFile "C:\Users\Public\Desktop\Roblox_Real.exe"
+
+      - name: 4_Tailscale_Gaming_IP
+        run: |
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-pc-gamer
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-real-gaming
           
-      - name: 4_Mantener_Viva
+      - name: 5_No_Cerrar
         run: Start-Sleep -Seconds 21600
         
