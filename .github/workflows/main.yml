@@ -1,16 +1,32 @@
-name: PC_Gamer_Roblox_Tmate
+name: PC_Gamer_Roblox_Final_V3
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_Acceso
+      - name: 1_Preparar_PC
         run: |
+          # Configurar acceso sin complicaciones
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          # Creamos una clave para que no entre cualquiera
+          net user runneradmin RobloxVM2026
           
-      - name: 2_Lanzar_Consola_Estable
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: false
+      - name: 2_Instalar_Cloudflared
+        run: |
+          # Descargar el tunel de Cloudflare
+          curl -L --output cloudflared.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+          # Lanzar el tunel para el Escritorio Remoto
+          Start-Process .\cloudflared.exe -ArgumentList "tunnel --url tcp://localhost:3389"
+          Write-Host "Esperando a que el tunel se genere..."
+          Start-Sleep -Seconds 30
           
+      - name: 3_DATOS_DE_CONEXION
+        run: |
+          # Este paso te dará el link mágico
+          Write-Host "Busca el link que termina en .trycloudflare.com abajo:"
+          Get-Content -Path (Get-ChildItem -Path C:\Users\runneradmin\AppData\Local\Temp -Filter "cloudflare*.log" | Select-Object -First 1).FullName
+          
+      - name: 4_Mantener_Viva
+        run: Start-Sleep -Seconds 21600
+        
