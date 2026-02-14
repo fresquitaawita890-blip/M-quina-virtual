@@ -1,5 +1,4 @@
-
-name: PC_GAMER_REAL_V16
+name: PC_GAMER_REAL_V17
 on: workflow_dispatch
 
 jobs:
@@ -12,33 +11,34 @@ jobs:
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
           
-      - name: 2_Motor_Grafico_y_Permisos_Finales
+      - name: 2_Motor_Grafico_y_Carpeta_Abierta
         run: |
-          # Bajamos los archivos de video
+          # Bajamos los archivos de video necesarios para que no de error de GPU
           Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
           7z x mesa.7z -oC:\Graficos_Base -y
           
-          # Crear carpeta y asegurar permisos con cmd
+          # Crear carpeta con permisos totales para evitar bloqueos locales
           New-Item -ItemType Directory -Path "C:\Juego_Setup" -Force
           cmd /c "icacls C:\Juego_Setup /grant Everyone:F /T"
           
-          # Copiamos el driver de video
+          # Copiamos el driver de video (Mesa3D)
           Copy-Item "C:\Graficos_Base\x64\opengl32.dll" -Destination "C:\Juego_Setup\opengl32.dll" -Force
           
-      - name: 3_Descargar_Roblox_Modo_Navegador
+      - name: 3_Descargar_Instalador_Oficial_Universal
         run: |
-          # Usamos un "User-Agent" para que Roblox crea que somos un humano en Chrome
-          $url = "https://setup.rbxcdn.com/version-bd08027bb04e4045-RobloxPlayerBeta.exe"
-          $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+          # Usamos el instalador base que suele tener menos bloqueos de IP
+          $url = "https://www.roblox.com/download/returnZip?browserTabChild=true"
+          $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
           
-          # Intentamos la descarga con la identidad camuflada
-          Invoke-WebRequest -Uri $url -OutFile "C:\Juego_Setup\Roblox_Player.exe" -UserAgent $userAgent
+          # Lo descargamos como un ejecutable estandar
+          Invoke-WebRequest -Uri $url -OutFile "C:\Juego_Setup\Roblox_Launcher.exe" -UserAgent $userAgent
           
       - name: 4_Finalizar_Red_Tailscale
         run: |
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile "ts.msi"
+          & "$env:ProgramFiles\7-Zip\7z.exe" x ts.msi -y
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-real-v16
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-real-v17
           
       - name: 5_Mantener_PC_Viva
         run: Start-Sleep -Seconds 21600
