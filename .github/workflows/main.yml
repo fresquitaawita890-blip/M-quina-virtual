@@ -6,13 +6,10 @@ jobs:
     steps:
       - name: Forzar_Apertura
         run: |
-          # 1. Matar cualquier proceso viejo
-          taskkill /f /im AnyDesk.exe /t || info
-          
-          # 2. Abrir el Firewall por completo
+          # 1. Abrir el Firewall por completo
           netsh advfirewall set allprofiles state off
           
-          # 3. Descargar y ejecutar sin instalar (Modo Portátil)
+          # 2. Descargar y ejecutar AnyDesk
           Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--set-password RobloxVM2026"
           
