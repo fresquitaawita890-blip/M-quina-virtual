@@ -9,7 +9,8 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/the-trace/TraceX/releases/download/v1.0/TraceX.exe" -OutFile "TraceX.exe"
           choco install mesa3d-software-renderer anydesk -y
           & "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --set-password "RobloxVM2026"
-      - name: ID
-        run: & "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --get-id
+      - name: GetID
+        run: '& "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --get-id'
       - name: Wait
         run: Start-Sleep -Seconds 21600
+        
