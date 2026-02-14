@@ -1,26 +1,21 @@
-name: Roblox_VM_2026
+name: Roblox_VM_Admin
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Instalacion_Forzada
+      - name: Preparar_Acceso_Directo
         run: |
-          # Descarga AnyDesk directo
+          # Descarga AnyDesk
           Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
-          
-          # Lo abrimos en modo 'instalación silenciosa' para que no pida permisos
+          # Lo instala como servicio para que no pida "Aceptar"
           Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--install C:\AnyDesk --start-with-win --silent" -Wait
-          
-          # Configuramos la contraseña directamente en el ejecutable instalado
+          # Forza la contraseña de administrador
           & "C:\AnyDesk\AnyDesk.exe" --set-password "RobloxVM2026"
-          
       - name: Obtener_ID
         run: |
-          # Esperamos a que el servicio arranque bien
           Start-Sleep -Seconds 10
           & "C:\AnyDesk\AnyDesk.exe" --get-id
-          
       - name: Mantener_Viva
         run: Start-Sleep -Seconds 21600
         
