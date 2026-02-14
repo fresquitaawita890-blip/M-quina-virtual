@@ -4,12 +4,23 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Instalacion
+      - name: Instalacion_Directa
         run: |
-          choco install anydesk mesa3d-software-renderer -y
-          & "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --set-password "RobloxVM2026"
-      - name: ID
-        run: '& "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --get-id'
-      - name: Mantener_Encendido
-        run: Start-Sleep -Seconds 21600
-        
+          # Descarga directa de AnyDesk sin instalador (Portable)
+          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
+          
+          # Abrir AnyDesk y configurar contraseña
+          Start-Process -FilePath ".\AnyDesk.exe"
+          Start-Sleep -Seconds 5
+          ./AnyDesk.exe --set-password "RobloxVM2026"
+          
+      - name: Obtener_ID
+        run: |
+          # Comando para ver el ID en pantalla
+          ./AnyDesk.exe --get-id
+          
+      - name: Mantener_Viva
+        run: |
+          Write-Host "Conecta AnyDesk con pass: RobloxVM2026"
+          Start-Sleep -Seconds 21600
+          
