@@ -1,60 +1,39 @@
-name: PC_GAMER_TAILSCALE
-on:
-  workflow_dispatch:
+name: PC_GAMER_AUTO_ROBLOX
+on: workflow_dispatch
 
 jobs:
-  secure-rdp:
+  build:
     runs-on: windows-latest
-    timeout-minutes: 3600
-
     steps:
-      - name: 1_Configuracion_Gamer_y_RDP
+      - name: 1_Configurar_PC_y_Usuario
         run: |
-          # Habilitar RDP y quitar bloqueos de seguridad
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
+          net user RDP RobloxVM2026 /add
+          net localgroup Administrators RDP /add
           
-          # INSTALAR ACELERADOR GRÁFICO (Para que Roblox y Minecraft abran)
-          Write-Host "Instalando motor grafico Mesa3D..."
-          Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
-          # Nota: Se recomienda instalar mesa3d-softpipe si tienes errores adentro.
-          
-      - name: 2_Crear_Usuario_RDP
+      - name: 2_Instalar_Graficos_Automatico
         run: |
-          # Usuario: RDP | Clave: RobloxVM2026 (Fija para que no se te olvide)
-          $password = "RobloxVM2026"
-          $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
-          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
-          echo "PASSWORD=$password" >> $env:GITHUB_ENV
-
-      - name: 3_Instalar_Tailscale
+          # Descargamos y ponemos el archivo opengl32.dll en el sistema para que todo abra
+          Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
+          arch -x mesa.7z -o "C:\Mesa3D"
+          # Copiamos el archivo que viste en tu foto a la carpeta del sistema
+          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Windows\System32\opengl32.dll" -Force
+          
+      - name: 3_Descargar_Roblox_Listo
+        run: |
+          # Dejamos el instalador en el escritorio listo para ti
+          Invoke-WebRequest -Uri "https://setup.rbxcdn.com/RobloxPlayerLauncher.exe" -OutFile "C:\Users\RDP\Desktop\Instalar_Roblox.exe"
+          
+      - name: 4_Conectar_Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          $installerPath = "$env:TEMP\tailscale.msi"
-          Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
-          Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
+          Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
+          Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-roblox-pc
+          $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          echo "TU_IP=$tsIP"
           
-      - name: 4_Conectar_Red_Privada
-        run: |
-          # ¡OJO! Debes tener el secreto TAILSCALE_AUTH_KEY en tu GitHub
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-gamer-pc
-          
-          $tsIP = $null
-          while (-not $tsIP) {
-              $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
-              Start-Sleep -Seconds 5
-          }
-          echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
-      
-      - name: 5_DATOS_FINALES_DE_ACCESO
-        run: |
-          Write-Host "`n======================================="
-          Write-Host "🎮 PC GAMER LISTA PARA CONECTAR"
-          Write-Host "🌐 IP TAILSCALE: $env:TAILSCALE_IP"
-          Write-Host "👤 USUARIO: RDP"
-          Write-Host "🔑 PASSWORD: $env:PASSWORD"
-          Write-Host "=======================================`n"
-          while ($true) { Start-Sleep -Seconds 300 }
-          
+      - name: 5_Mantener_Viva
+        run: Start-Sleep -Seconds 21600
+        
