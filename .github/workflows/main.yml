@@ -1,35 +1,39 @@
-name: PC_Gamer_Roblox
+name: GitHub_PC_Gamer_Pro
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Configurar_PC_Gamer
+      - name: 1_Configurar_Sistema
         run: |
-          # 1. Crear usuario y habilitar RDP
           net user Administrator RobloxVM2026
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-          # 2. Instalar Ngrok
+      - name: 2_Instalar_Graficos_Mesa3D
+        run: |
+          # Esto instala el motor para que Roblox corra sin tarjeta de video real
+          choco install mesa3d-softpipe -y
+          
+      - name: 3_Abrir_Tunel_Ngrok
+        run: |
           choco install ngrok -y
           ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
           Start-Process ngrok -ArgumentList "tcp 3389"
+          Write-Host "Esperando 30 segundos a que el tunel se estabilice..."
+          Start-Sleep -Seconds 30
           
-          # 3. Descargar Mesa3D (El motor para que el juego corra sin GPU real)
-          Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
-          # Nota: Esto prepara el sistema para juegos 3D
-          
-      - name: Direccion_De_Conexion
+      - name: 4_OBTENER_DATOS_CONEXION
         run: |
-          Start-Sleep -Seconds 15
           $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
-          echo "---------------------------------------"
-          echo "CONECTA AQUI: $address"
-          echo "USUARIO: Administrator"
-          echo "CLAVE: RobloxVM2026"
-          echo "---------------------------------------"
+          $cleanAddress = $address -replace "tcp://", ""
+          echo "--------------------------------------------------"
+          echo "✅ PC LISTA PARA JUGAR"
+          echo "🌐 DIRECCION: $cleanAddress"
+          echo "👤 USUARIO: Administrator"
+          echo "🔑 CLAVE: RobloxVM2026"
+          echo "--------------------------------------------------"
           
-      - name: Mantener_Viva
+      - name: 5_Mantener_Viva
         run: Start-Sleep -Seconds 21600
         
