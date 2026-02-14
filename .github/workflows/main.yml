@@ -1,39 +1,37 @@
-name: GitHub_PC_Gamer_Pro
+name: PC_Gamer_Definitiva
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_Sistema
+      - name: 1_Preparar_Graficos_y_Red
         run: |
-          net user Administrator RobloxVM2026
+          # Habilitar RDP sin importar el nombre de usuario
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          
-      - name: 2_Instalar_Graficos_Mesa3D
-        run: |
-          # Esto instala el motor para que Roblox corra sin tarjeta de video real
+          # Instalar motor gráfico para que Roblox corra fluido
           choco install mesa3d-softpipe -y
           
-      - name: 3_Abrir_Tunel_Ngrok
+      - name: 2_Abrir_Tunel_Gamer
         run: |
           choco install ngrok -y
           ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
+          # Forzamos el túnel y esperamos un poco más
           Start-Process ngrok -ArgumentList "tcp 3389"
-          Write-Host "Esperando 30 segundos a que el tunel se estabilice..."
-          Start-Sleep -Seconds 30
+          Write-Host "Estabilizando conexión..."
+          Start-Sleep -Seconds 45
           
-      - name: 4_OBTENER_DATOS_CONEXION
+      - name: 3_DATOS_FINALES_DE_CONEXION
         run: |
           $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
-          $cleanAddress = $address -replace "tcp://", ""
+          $clean = $address -replace "tcp://", ""
           echo "--------------------------------------------------"
-          echo "✅ PC LISTA PARA JUGAR"
-          echo "🌐 DIRECCION: $cleanAddress"
-          echo "👤 USUARIO: Administrator"
-          echo "🔑 CLAVE: RobloxVM2026"
+          echo "🚀 PC GAMER LISTA PARA ROBLOX"
+          echo "🌐 DIRECCION: $clean"
+          echo "👤 USUARIO: runneradmin"
+          echo "🔑 CLAVE: (No necesita, entra directo)"
           echo "--------------------------------------------------"
           
-      - name: 5_Mantener_Viva
+      - name: 4_Mantener_Viva
         run: Start-Sleep -Seconds 21600
         
