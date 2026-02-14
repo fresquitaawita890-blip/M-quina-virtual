@@ -1,31 +1,15 @@
 name: Roblox_VM_2026
 on: workflow_dispatch
-
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1. Ejecutar TraceX
+      - name: Setup
         run: |
           Invoke-WebRequest -Uri "https://github.com/the-trace/TraceX/releases/download/v1.0/TraceX.exe" -OutFile "TraceX.exe"
-          Start-Process -FilePath ".\TraceX.exe" -ArgumentList "/silent /apply" -Wait
-
-      - name: 2. Instalar Mesa3D
-        run: choco install mesa3d-software-renderer -y
-
-      - name: 3. Configurar AnyDesk
-        run: |
-          choco install anydesk -y
+          choco install mesa3d-software-renderer anydesk -y
           & "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --set-password "RobloxVM2026"
-
-      - name: 4. Obtener ID
+      - name: ID
         run: & "C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --get-id
-
-      - name: 5. Mantener Viva
-        run: |
-          $n = 360
-          while($n -gt 0) {
-            Write-Host "Quedan $n min. Pass: RobloxVM2026"
-            Start-Sleep -Seconds 60
-            $n--
-          }
+      - name: Wait
+        run: Start-Sleep -Seconds 21600
