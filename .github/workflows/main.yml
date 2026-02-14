@@ -1,37 +1,60 @@
-name: PC_Roblox_Funciona_Ya
-on: workflow_dispatch
+name: PC_GAMER_TAILSCALE
+on:
+  workflow_dispatch:
+
 jobs:
-  build:
+  secure-rdp:
     runs-on: windows-latest
+    timeout-minutes: 3600
+
     steps:
-      - name: 1_Configurar_PC
+      - name: 1_Configuracion_Gamer_y_RDP
         run: |
-          net user runneradmin RobloxVM2026
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          # Habilitar RDP y quitar bloqueos de seguridad
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           
-      - name: 2_Instalar_Ngrok_Directo
+          # INSTALAR ACELERADOR GRÁFICO (Para que Roblox y Minecraft abran)
+          Write-Host "Instalando motor grafico Mesa3D..."
+          Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
+          # Nota: Se recomienda instalar mesa3d-softpipe si tienes errores adentro.
+          
+      - name: 2_Crear_Usuario_RDP
         run: |
-          # Descargamos ngrok directo sin usar choco (que dio error 504)
-          Invoke-WebRequest -Uri "https://bin.equinox.io/c/b342964/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
-          Expand-Archive -Path "ngrok.zip" -DestinationPath "."
-          # Configurar el Token
-          .\ngrok.exe config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
-          # Lanzar y esperar
-          Start-Process .\ngrok.exe -ArgumentList "tcp 3389"
-          Write-Host "Esperando 30 segundos..."
-          Start-Sleep -Seconds 30
-          
-      - name: 3_DAME_LA_DIRECCION
+          # Usuario: RDP | Clave: RobloxVM2026 (Fija para que no se te olvide)
+          $password = "RobloxVM2026"
+          $securePass = ConvertTo-SecureString $password -AsPlainText -Force
+          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
+          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
+          echo "PASSWORD=$password" >> $env:GITHUB_ENV
+
+      - name: 3_Instalar_Tailscale
         run: |
-          $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
-          $clean = $address -replace "tcp://", ""
-          echo "--------------------------------------------------"
-          echo "🌐 DIRECCION: $clean"
-          echo "👤 USUARIO: runneradmin"
-          echo "🔑 CLAVE: RobloxVM2026"
-          echo "--------------------------------------------------"
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+          $installerPath = "$env:TEMP\tailscale.msi"
+          Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
+          Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
           
-      - name: 4_Mantener_Encendida
-        run: Start-Sleep -Seconds 21600
-        
+      - name: 4_Conectar_Red_Privada
+        run: |
+          # ¡OJO! Debes tener el secreto TAILSCALE_AUTH_KEY en tu GitHub
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-gamer-pc
+          
+          $tsIP = $null
+          while (-not $tsIP) {
+              $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+              Start-Sleep -Seconds 5
+          }
+          echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
+      
+      - name: 5_DATOS_FINALES_DE_ACCESO
+        run: |
+          Write-Host "`n======================================="
+          Write-Host "🎮 PC GAMER LISTA PARA CONECTAR"
+          Write-Host "🌐 IP TAILSCALE: $env:TAILSCALE_IP"
+          Write-Host "👤 USUARIO: RDP"
+          Write-Host "🔑 PASSWORD: $env:PASSWORD"
+          Write-Host "=======================================`n"
+          while ($true) { Start-Sleep -Seconds 300 }
+          
