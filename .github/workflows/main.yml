@@ -1,35 +1,33 @@
-name: PC_Gamer_Definitiva
+name: PC_Gamer_Roblox_FIX
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Preparar_Graficos_y_Red
+      - name: 1_Configurar_Acceso_Directo
         run: |
-          # Habilitar RDP sin importar el nombre de usuario
+          # Habilitamos RDP para el usuario que ya existe por defecto (runneradmin)
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          # Instalar motor gráfico para que Roblox corra fluido
-          choco install mesa3d-softpipe -y
           
-      - name: 2_Abrir_Tunel_Gamer
+      - name: 2_Abrir_Tunel_Ngrok
         run: |
+          # Instalamos Ngrok y conectamos tu token
           choco install ngrok -y
           ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
-          # Forzamos el túnel y esperamos un poco más
           Start-Process ngrok -ArgumentList "tcp 3389"
-          Write-Host "Estabilizando conexión..."
-          Start-Sleep -Seconds 45
+          Write-Host "Esperando a que el tunel despierte..."
+          Start-Sleep -Seconds 60
           
-      - name: 3_DATOS_FINALES_DE_CONEXION
+      - name: 3_DATOS_DE_CONEXION
         run: |
           $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
           $clean = $address -replace "tcp://", ""
           echo "--------------------------------------------------"
-          echo "🚀 PC GAMER LISTA PARA ROBLOX"
-          echo "🌐 DIRECCION: $clean"
+          echo "🚀 PC LISTA PARA ROBLOX"
+          echo "🌐 CONECTA AQUI: $clean"
           echo "👤 USUARIO: runneradmin"
-          echo "🔑 CLAVE: (No necesita, entra directo)"
+          echo "🔑 CLAVE: (En blanco / No necesita)"
           echo "--------------------------------------------------"
           
       - name: 4_Mantener_Viva
