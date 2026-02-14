@@ -1,42 +1,40 @@
-name: PC_GAMER_REAL_V18
+name: PC_GAMER_REAL_V19
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Crear_Usuario_y_Acceso
+      - name: 1_Configurar_Identidad_y_Acceso
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           net user RDP RobloxVM2026 /add
           net localgroup Administrators RDP /add
           
-      - name: 2_Configurar_GPU_Virtual_Sistema
+      - name: 2_Inyectar_Drivers_de_Video_Virtual
         run: |
-          # Bajamos Mesa3D para engañar al sistema y que crea que hay GPU
+          # Bajamos Mesa3D para evitar errores de GPU
           Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
           7z x mesa.7z -oC:\Mesa3D -y
           
-          # Creamos la carpeta de juego y le damos todos los permisos
+          # Creamos la carpeta donde vas a instalar el juego
           New-Item -ItemType Directory -Path "C:\Roblox_Cloud" -Force
           cmd /c "icacls C:\Roblox_Cloud /grant Everyone:F /T"
           
-          # Copiamos el driver de video a la carpeta de descarga
-          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Roblox_Cloud\opengl32.dll" -Force
+          # Dejamos el driver listo en el escritorio para que no lo busques
+          Copy-Item "C:\Mesa3D\x64\opengl32.dll" -Destination "C:\Users\Public\Desktop\opengl32.dll" -Force
           
-      - name: 3_Descargar_Instalador_Directo
+      - name: 3_Instalar_Navegador_Gaming
         run: |
-          # Usamos un enlace directo al ejecutable para evitar descargar codigo HTML
-          $url = "https://setup.rbxcdn.com/version-bd08027bb04e4045-RobloxPlayerBeta.exe"
-          # Si el servidor oficial sigue dando guerra, descargamos el launcher base
-          Invoke-WebRequest -Uri $url -OutFile "C:\Roblox_Cloud\Roblox_Real.exe" -UserAgent "Mozilla/5.0"
-          
+          # Bajamos un navegador que suele ser mas rapido que Edge para estas cosas
+          Invoke-WebRequest -Uri "https://github.com/brave/brave-browser/releases/download/v1.62.165/BraveBrowserSetup.exe" -OutFile "C:\Users\Public\Desktop\Instalar_Navegador.exe"
+
       - name: 4_Finalizar_Red_Tailscale
         run: |
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-real-v18
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=pc-real-v19
           
-      - name: 5_Mantener_PC_Viva
+      - name: 5_No_Cerrar_PC
         run: Start-Sleep -Seconds 21600
         
