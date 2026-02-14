@@ -1,29 +1,33 @@
-name: Roblox_VM_Final_Final
+name: Roblox_VM_RDP_Final
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Forzar_Apertura
+      - name: Configurar_RDP
         run: |
-          netsh advfirewall set allprofiles state off
-          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
-          Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "--set-password RobloxVM2026"
+          # 1. Configurar contraseña del usuario Administrator
+          net user Administrator RobloxVM2026
           
-      - name: Obtener_ID_Insistente
+          # 2. Habilitar Escritorio Remoto
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          
+          # 3. Instalar Ngrok y abrir túnel
+          choco install ngrok -y
+          ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
+          Start-Process ngrok -ArgumentList "tcp 3389"
+          Start-Sleep -Seconds 10
+          
+      - name: Obtener_Direccion_RDP
         run: |
-          echo "Esperando a que AnyDesk despierte..."
-          Start-Sleep -Seconds 30
-          # Intento 1
-          $id = ./AnyDesk.exe --get-id
-          # Si sale vacío, esperamos y reintentamos
-          if (-not $id) { 
-             Start-Sleep -Seconds 20
-             $id = ./AnyDesk.exe --get-id 
-          }
-          echo "-----------------------"
-          echo "TU_ID_ES: $id"
-          echo "-----------------------"
+          # Obtenemos la dirección pública de Ngrok
+          $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
+          echo "----------------------------------------"
+          echo "CONECTA POR RDP A: $address"
+          echo "USUARIO: Administrator"
+          echo "PASS: RobloxVM2026"
+          echo "----------------------------------------"
           
       - name: Mantener_Viva
         run: Start-Sleep -Seconds 21600
