@@ -1,35 +1,16 @@
-name: PC_Gamer_Roblox_FIX
+name: PC_Gamer_Roblox_Tmate
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1_Configurar_Acceso_Directo
+      - name: 1_Configurar_Acceso
         run: |
-          # Habilitamos RDP para el usuario que ya existe por defecto (runneradmin)
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-      - name: 2_Abrir_Tunel_Ngrok
-        run: |
-          # Instalamos Ngrok y conectamos tu token
-          choco install ngrok -y
-          ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
-          Start-Process ngrok -ArgumentList "tcp 3389"
-          Write-Host "Esperando a que el tunel despierte..."
-          Start-Sleep -Seconds 60
+      - name: 2_Lanzar_Consola_Estable
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: false
           
-      - name: 3_DATOS_DE_CONEXION
-        run: |
-          $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
-          $clean = $address -replace "tcp://", ""
-          echo "--------------------------------------------------"
-          echo "🚀 PC LISTA PARA ROBLOX"
-          echo "🌐 CONECTA AQUI: $clean"
-          echo "👤 USUARIO: runneradmin"
-          echo "🔑 CLAVE: (En blanco / No necesita)"
-          echo "--------------------------------------------------"
-          
-      - name: 4_Mantener_Viva
-        run: Start-Sleep -Seconds 21600
-        
