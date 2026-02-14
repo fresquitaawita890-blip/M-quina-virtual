@@ -1,33 +1,34 @@
-name: Roblox_VM_RDP_Final
+name: PC_Gamer_Roblox
 on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Configurar_RDP
+      - name: Configurar_PC_Gamer
         run: |
-          # 1. Configurar contraseña del usuario Administrator
+          # 1. Crear usuario y habilitar RDP
           net user Administrator RobloxVM2026
-          
-          # 2. Habilitar Escritorio Remoto
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-          # 3. Instalar Ngrok y abrir túnel
+          # 2. Instalar Ngrok
           choco install ngrok -y
           ngrok config add-authtoken 39eVkh665hfvR3NNdqK6yFbG3B7_5NqkDibvo8CtNxNEkmxwR
           Start-Process ngrok -ArgumentList "tcp 3389"
-          Start-Sleep -Seconds 10
           
-      - name: Obtener_Direccion_RDP
+          # 3. Descargar Mesa3D (El motor para que el juego corra sin GPU real)
+          Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/23.1.1/mesa3d-23.1.1-release-msvc.7z" -OutFile "mesa.7z"
+          # Nota: Esto prepara el sistema para juegos 3D
+          
+      - name: Direccion_De_Conexion
         run: |
-          # Obtenemos la dirección pública de Ngrok
+          Start-Sleep -Seconds 15
           $address = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
-          echo "----------------------------------------"
-          echo "CONECTA POR RDP A: $address"
+          echo "---------------------------------------"
+          echo "CONECTA AQUI: $address"
           echo "USUARIO: Administrator"
-          echo "PASS: RobloxVM2026"
-          echo "----------------------------------------"
+          echo "CLAVE: RobloxVM2026"
+          echo "---------------------------------------"
           
       - name: Mantener_Viva
         run: Start-Sleep -Seconds 21600
